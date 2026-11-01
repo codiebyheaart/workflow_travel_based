@@ -1,0 +1,47 @@
+[
+  {
+    "id": "vernal-footbridge",
+    "name": "Vernal Fall Footbridge",
+    "park": "Yosemite National Park, California",
+    "difficulty": "moderate",
+    "distance": "1.6 miles round trip",
+    "elevation": "400 feet gain",
+    "duration": "1–1.5 hours",
+    "summary": "A shorter Yosemite Valley outing with a view of Vernal Fall. The trail climbs steadily and conditions may change by season.",
+    "gear": "Sturdy walking shoes, water, layers, and a map.",
+    "season": "Check Yosemite's current trail conditions before choosing a date.",
+    "source": "https://www.nps.gov/yose/planyourvisit/vernalnevadatrail.htm",
+    "source_type": "public_nps_example",
+    "bookable": false
+  },
+  {
+    "id": "angels-landing",
+    "name": "Angels Landing",
+    "park": "Zion National Park, Utah",
+    "difficulty": "strenuous",
+    "distance": "5.4 miles round trip",
+    "elevation": "1,488 feet gain",
+    "duration": "About 4 hours or longer",
+    "summary": "A steep, exposed route. A permit is required for the chains section beyond Scout Lookout. Check weather and trail conditions before going.",
+    "gear": "Broken-in footwear with good traction, water, food, layers, and a light.",
+    "season": "Conditions vary year-round; avoid the chains during rain, storms, ice, or darkness.",
+    "source": "https://www.nps.gov/zion/planyourvisit/angels-landing-hiking-permits.htm",
+    "source_type": "public_nps_example",
+    "bookable": false
+  },
+  {
+    "id": "bright-angel",
+    "name": "Bright Angel Trail — 1.5 Mile Resthouse",
+    "park": "Grand Canyon National Park, Arizona",
+    "difficulty": "strenuous",
+    "distance": "3 miles round trip",
+    "elevation": "1,120 feet elevation change",
+    "duration": "2–4 hours",
+    "summary": "A steep canyon day hike. Descending is easier than climbing back; carry water and check current closures and conditions.",
+    "gear": "Water, food, sun protection, sturdy footwear, and layers.",
+    "season": "Extreme heat and winter ice are possible. Check the current NPS conditions page before travel.",
+    "source": "https://www.nps.gov/places/000/bright-angel-trail.htm",
+    "source_type": "public_nps_example",
+    "bookable": false
+  }
+]

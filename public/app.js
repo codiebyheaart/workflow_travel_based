@@ -1,0 +1,55 @@
+const $ = s => document.querySelector(s);
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+let snapshot = null, selected = null, token = sessionStorage.getItem('traildesk-token') || '';
+const fmt = s => s ? new Date(s).toLocaleString(undefined, { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }) : '—';
+const initials = s => String(s || '?').split(/\s+/).map(x => x[0]).slice(0,2).join('').toUpperCase();
+const badge = v => `<span class="pill ${esc(v)}">${esc(String(v || '—').replaceAll('_',' '))}</span>`;
+function toast(message) { const el = $('#toast'); el.textContent = message; el.classList.add('show'); clearTimeout(toast.timer); toast.timer = setTimeout(() => el.classList.remove('show'), 3200); }
+async function api(path, options = {}) {
+  const headers = { ...options.headers }; if (token) headers.Authorization = `Bearer ${token}`;
+  if (options.body) headers['Content-Type'] = 'application/json';
+  let response = await fetch(path, { ...options, headers });
+  if (response.status === 401) {
+    const next = prompt('Enter the dashboard access token');
+    if (!next) throw new Error('Dashboard access token required');
+    token = next; sessionStorage.setItem('traildesk-token', next); headers.Authorization = `Bearer ${token}`;
+    response = await fetch(path, { ...options, headers });
+  }
+  const data = await response.json(); if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`); return data;
+}
+async function load() { try { snapshot = await api('/api/state'); render(); if (selected) await selectLead(selected, false); } catch (error) { toast(error.message); } }
+function render() {
+  const { metrics:m, leads, team, events, catalog, bookings } = snapshot;
+  $('#m-enquiries').textContent=m.enquiries; $('#m-hot').textContent=m.hot; $('#m-handoffs').textContent=m.handoffs; $('#m-paid').textContent=m.paid; $('#m-conversion').textContent=`${m.conversion}%`;
+  $('#l-hot').textContent=m.hot; $('#l-warm').textContent=m.warm; $('#l-cold').textContent=m.cold; $('#nav-count').textContent=m.handoffs; $('#inbox-count').textContent=leads.length;
+  $('#temperature-bar').innerHTML = m.enquiries ? ['hot','warm','cold'].map(k=>`<span class="${k}" style="width:${m[k]/m.enquiries*100}%"></span>`).join('') : '';
+  $('#team-list').innerHTML = team.map(a => { const count=leads.filter(l=>l.assignee===a.id&&l.status==='human').length; return `<div class="team-row"><span class="team-avatar">${esc(initials(a.name))}</span><span class="person">${esc(a.name)}<small>${a.available?'Available':'Away'}</small></span><span class="load">${count} active</span></div>`; }).join('');
+  $('#recent-rows').innerHTML = leads.slice(0,6).map(l=>`<tr><td><button class="row-link contact-cell" data-lead="${l.id}"><span class="contact-avatar">${esc(initials(l.name))}</span><span><strong>${esc(l.name)}</strong><small>+${esc(l.phone)}</small></span></button></td><td>${esc(lastInterest(l))}</td><td>${badge(l.grade)}</td><td>${badge(l.status)}</td><td>${esc(team.find(a=>a.id===l.assignee)?.name || '—')}</td><td>${fmt(l.updatedAt)}</td></tr>`).join('') || `<tr><td class="empty-row" colspan="6">No enquiries yet. Load sample enquiries or use the simulator.</td></tr>`;
+  $('#event-list').innerHTML = events.slice(0,5).map(e=>`<div class="event-row"><span class="event-mark">↗</span><span><b>${esc(e.type.replaceAll('_',' '))}</b>${esc(e.detail || 'TrailDesk activity')}</span><time>${fmt(e.at)}</time></div>`).join('') || '<div class="empty-row">Activity will appear here.</div>';
+  $('#booking-rows').innerHTML = bookings.map(b=>{const lead=leads.find(l=>l.id===b.leadId), trek=catalog.find(t=>t.id===b.trekId);return `<tr><td>${esc(lead?.name||'—')}</td><td>${esc(trek?.name||'To confirm')}</td><td>${badge(b.status)}</td><td>${b.amountCents?'$'+(b.amountCents/100).toFixed(2):'To confirm'}</td><td>${fmt(b.createdAt)}</td><td>${b.checkoutUrl?`<a href="${esc(b.checkoutUrl)}" target="_blank" rel="noopener">Checkout ↗</a>`:b.status==='request'?`<button class="link-button" data-checkout="${b.id}">Create checkout</button>`:'—'}</td></tr>`}).join('') || '<tr><td class="empty-row" colspan="6">Booking requests appear when customers ask to reserve a trail.</td></tr>';
+  $('#library-grid').innerHTML = catalog.map(t=>`<article class="trail-card"><div class="location">${esc(t.park.toUpperCase())}</div><h3>${esc(t.name)}</h3><p>${esc(t.summary)}</p><div class="trail-stats"><span>${esc(t.distance)}</span><span>${esc(t.elevation)}</span><span>${esc(t.difficulty)}</span></div><p><strong>Gear:</strong> ${esc(t.gear)}</p><a href="${esc(t.source)}" target="_blank" rel="noopener">View National Park Service source ↗</a></article>`).join('');
+  renderInbox();
+  $('#demo-seed').hidden=!snapshot.demo; $('#simulator').hidden=!snapshot.demo; $('#mode-label').textContent=snapshot.demo?'Local demo':'Live operations';
+}
+function lastInterest(l){ const b=snapshot.bookings.find(b=>b.leadId===l.id); const t=snapshot.catalog.find(t=>t.id===b?.trekId); return t?.name || (l.grade==='cold'?'General enquiry':'Trek enquiry'); }
+function renderInbox() { if(!snapshot)return; const q=$('#search').value.toLowerCase(), grade=$('#grade-filter').value; const leads=snapshot.leads.filter(l=>(l.name.toLowerCase().includes(q)||l.phone.includes(q))&&(grade==='all'||l.grade===grade)); $('#conversation-items').innerHTML=leads.map(l=>`<button class="conversation-item ${selected===l.id?'selected':''}" data-lead="${l.id}"><span class="contact-avatar">${esc(initials(l.name))}</span><span class="text"><strong>${esc(l.name)}</strong><p>${esc(lastInterest(l))} · ${esc(l.status)}</p></span><small>${fmt(l.updatedAt)}</small></button>`).join('') || '<div class="empty-row">No matching conversations.</div>'; }
+async function selectLead(id, navigate=true) {
+  selected=id; if(navigate) showView('inbox'); renderInbox();
+  const d=await api(`/api/leads/${id}`), l=d.lead, team=snapshot.team;
+  $('#detail-panel').innerHTML=`<div class="detail-head"><span class="contact-avatar">${esc(initials(l.name))}</span><span class="identity"><strong>${esc(l.name)}</strong><small>+${esc(l.phone)} · ${esc(l.source)}</small></span>${badge(l.grade)}</div><div class="detail-meta">${badge(l.status)}<select id="assign-select" aria-label="Assign conversation"><option value="">Unassigned</option>${team.map(a=>`<option value="${esc(a.id)}" ${l.assignee===a.id?'selected':''}>${esc(a.name)}</option>`).join('')}</select><select id="grade-select" aria-label="Lead grade">${['hot','warm','cold'].map(g=>`<option value="${g}" ${g===l.grade?'selected':''}>${g[0].toUpperCase()+g.slice(1)} lead</option>`).join('')}</select></div><div class="chat" id="chat">${d.messages.map(m=>`<div class="bubble ${m.direction}">${esc(m.text)}<small>${esc(m.author)} · ${fmt(m.at)} · ${esc(m.delivery)}</small></div>`).join('')}</div><form class="reply-form" id="reply-form"><input name="text" placeholder="Reply as a team member" required><button class="primary">Send</button></form><div class="detail-actions"><button class="secondary" id="resolve">${l.status==='resolved'?'Reopen':'Mark resolved'}</button><button class="secondary" id="followup">Set follow-up</button></div>${d.bookings.length?`<div class="booking-note">${d.bookings.length} booking request(s) · ${esc(d.bookings.map(b=>b.status).join(', '))}. Price and availability need staff confirmation.</div>`:''}`;
+  $('#chat').scrollTop=$('#chat').scrollHeight;
+  $('#assign-select').onchange=async e=>{if(!e.target.value)return;await act(id,{type:'assign',assignee:e.target.value})};
+  $('#grade-select').onchange=async e=>act(id,{type:'grade',grade:e.target.value});
+  $('#resolve').onclick=async()=>act(id,{type:l.status==='resolved'?'reopen':'resolve'});
+  $('#followup').onclick=async()=>{const at=prompt('Follow-up date and time (for example 2027-06-01T09:00)');if(at)await act(id,{type:'followup',at})};
+  $('#reply-form').onsubmit=async e=>{e.preventDefault();try{await api(`/api/leads/${id}/reply`,{method:'POST',body:JSON.stringify({text:e.target.text.value,author:'Team'})});toast('Reply recorded');await load()}catch(err){toast(err.message)}};
+}
+async function act(id, input){try{await api(`/api/leads/${id}/action`,{method:'POST',body:JSON.stringify(input)});toast('Conversation updated');await load()}catch(e){toast(e.message)}}
+function showView(name){document.querySelectorAll('.nav').forEach(el=>el.classList.toggle('active',el.dataset.view===name));document.querySelectorAll('.view').forEach(el=>el.classList.toggle('active-view',el.id===`${name}-view`));const titles={overview:['Overview','Good morning, team','A clear view of every enquiry, handoff, and booking request.'],inbox:['Conversations','Conversation inbox','Review chat history and give each guest a clear next step.'],bookings:['Bookings','Booking pipeline','Track requests, staff-confirmed quotes, and paid bookings.'],library:['Trail library','Trail knowledge library','Sourced facts used by the example assistant.']};$('#view-name').textContent=titles[name][0];$('#page-title').innerHTML=esc(titles[name][1])+'<span class="period">.</span>';$('#page-subtitle').textContent=titles[name][2];}
+document.addEventListener('click',async e=>{const nav=e.target.closest('[data-view],[data-go]');if(nav)showView(nav.dataset.view||nav.dataset.go);const lead=e.target.closest('[data-lead]');if(lead)try{await selectLead(lead.dataset.lead)}catch(err){toast(err.message)};const checkout=e.target.closest('[data-checkout]');if(checkout){const dollars=prompt('Enter the staff-confirmed USD total. A Stripe Checkout link will be created.');if(dollars){try{const cents=Math.round(Number(dollars)*100);const r=await api(`/api/bookings/${checkout.dataset.checkout}/checkout`,{method:'POST',body:JSON.stringify({amountCents:cents})});toast('Checkout created');await load();window.open(r.url,'_blank','noopener')}catch(err){toast(err.message)}}}});
+$('#search').oninput=renderInbox;$('#grade-filter').onchange=renderInbox;$('#refresh').onclick=load;$('#dismiss-notice').onclick=()=>$('#notice').hidden=true;
+$('#demo-seed').onclick=async()=>{try{await api('/api/demo/seed',{method:'POST'});toast('Sample enquiries loaded');await load()}catch(e){toast(e.message)}};
+$('#sim-form').onsubmit=async e=>{e.preventDefault();const form=new FormData(e.target);try{const result=await api('/api/demo/inbound',{method:'POST',body:JSON.stringify({name:form.get('name'),phone:form.get('phone'),text:form.get('message')})});toast('Enquiry processed');await load();await selectLead(result.leadId)}catch(err){toast(err.message)}};
+$('#export').onclick=async()=>{try{const headers=token?{Authorization:`Bearer ${token}`}:{},r=await fetch('/api/export.csv',{headers});if(!r.ok)throw new Error('Export failed');const a=document.createElement('a');a.href=URL.createObjectURL(await r.blob());a.download='traildesk-leads.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}catch(e){toast(e.message)}};
+$('#today').textContent=new Date().toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+load();

@@ -1,0 +1,102 @@
+{
+  "name": "TrailDesk 01 — Process WhatsApp Enquiry",
+  "nodes": [
+    {
+      "id": "7c8130be-8301-4b70-8000-000000000001",
+      "name": "Inbound Job",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -500,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "traildesk-process",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "webhookId": "9b7834a8-8f4b-44b2-9b6d-51c6d238e38d"
+    },
+    {
+      "id": "7c8130be-8301-4b70-8000-000000000002",
+      "name": "Process and Reply",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -200,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:4100/internal/process",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-internal-key",
+              "value": "={{ $('Inbound Job').first().json.headers['x-internal-key'] }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ jobId: $('Inbound Job').first().json.body.jobId }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "id": "7c8130be-8301-4b70-8000-000000000003",
+      "name": "Acknowledge Job",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        100,
+        0
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Inbound Job": {
+      "main": [
+        [
+          {
+            "node": "Process and Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process and Reply": {
+      "main": [
+        [
+          {
+            "node": "Acknowledge Job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}

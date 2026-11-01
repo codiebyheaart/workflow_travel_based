@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>TrailDesk — Trek enquiry operations</title>
+  <meta name="description" content="Trek enquiry, lead, booking, and handoff operations dashboard">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="rail">
+      <div class="brand"><span class="brand-icon">△</span><div><strong>TrailDesk</strong><small>OPERATIONS</small></div></div>
+      <nav aria-label="Main navigation">
+        <button class="nav active" data-view="overview"><span>▦</span> Overview</button>
+        <button class="nav" data-view="inbox"><span>▤</span> Conversations <b id="nav-count">0</b></button>
+        <button class="nav" data-view="bookings"><span>◇</span> Bookings</button>
+        <button class="nav" data-view="library"><span>◫</span> Trail library</button>
+      </nav>
+      <div class="rail-bottom"><div class="status-dot"></div><div><strong>Workspace online</strong><small id="mode-label">Local demo</small></div></div>
+    </aside>
+    <main>
+      <header class="topbar"><div class="breadcrumb">TRAILDESK <span>/</span> <b id="view-name">Overview</b></div><div class="top-actions"><span id="today"></span><button class="ghost" id="refresh">↻ Refresh</button><button class="avatar" aria-label="Operations team">TD</button></div></header>
+      <div class="content">
+        <section class="page-heading"><div><div class="eyebrow">TREKKING OPERATIONS</div><h1 id="page-title">Good morning, team<span class="period">.</span></h1><p id="page-subtitle">A clear view of every enquiry, handoff, and booking request.</p></div><div class="heading-actions"><button class="secondary" id="export">↓ Export leads</button><button class="primary" id="demo-seed">＋ Load sample enquiries</button></div></section>
+        <div class="notice" id="notice"><span class="notice-icon">ⓘ</span><div><strong>Demo workspace</strong><p>Trail facts come from public National Park Service pages. Customer and booking records are examples; prices and availability require staff confirmation.</p></div><button id="dismiss-notice" aria-label="Dismiss">×</button></div>
+
+        <section id="overview-view" class="view active-view">
+          <div class="metric-grid">
+            <article class="metric"><div class="metric-top"><span>Total enquiries</span><span class="metric-icon">↗</span></div><strong id="m-enquiries">0</strong><small>All conversations</small></article>
+            <article class="metric"><div class="metric-top"><span>Hot leads</span><span class="metric-icon orange">✦</span></div><strong id="m-hot">0</strong><small>Ready for team follow-up</small></article>
+            <article class="metric"><div class="metric-top"><span>Human handoffs</span><span class="metric-icon blue">⇄</span></div><strong id="m-handoffs">0</strong><small>In the team queue</small></article>
+            <article class="metric"><div class="metric-top"><span>Paid bookings</span><span class="metric-icon green">✓</span></div><strong id="m-paid">0</strong><small><span id="m-conversion">0%</span> enquiry conversion</small></article>
+          </div>
+          <div class="overview-grid">
+            <article class="panel lead-panel"><div class="panel-head"><div><div class="eyebrow">PIPELINE</div><h2>Lead temperature</h2></div><span class="panel-note">Current mix</span></div><div class="temperature"><div class="temperature-bar" id="temperature-bar"></div><div class="legend"><span><i class="hot"></i> Hot <b id="l-hot">0</b></span><span><i class="warm"></i> Warm <b id="l-warm">0</b></span><span><i class="cold"></i> Cold <b id="l-cold">0</b></span></div></div><div class="pipeline-note">Lead rules are demo defaults until client criteria are supplied.</div></article>
+            <article class="panel team-panel"><div class="panel-head"><div><div class="eyebrow">TEAM COVERAGE</div><h2>Conversation owners</h2></div></div><div id="team-list"></div></article>
+          </div>
+          <article class="panel recent-panel"><div class="panel-head"><div><div class="eyebrow">LIVE QUEUE</div><h2>Recent enquiries</h2></div><button class="link-button" data-go="inbox">View inbox →</button></div><div class="table-wrap"><table><thead><tr><th>CONTACT</th><th>INTEREST</th><th>LEAD</th><th>STATUS</th><th>OWNER</th><th>UPDATED</th></tr></thead><tbody id="recent-rows"></tbody></table></div></article>
+          <div class="bottom-grid"><article class="panel"><div class="panel-head"><div><div class="eyebrow">ACTIVITY</div><h2>Recent events</h2></div></div><div id="event-list"></div></article><article class="feature-card"><div class="feature-symbol">⌁</div><div class="eyebrow">BUILT FOR THE TRAIL</div><h2>Every enquiry, one clear path.</h2><p>AI handles sourced trail questions. Your team takes over for pricing, negotiation, and booking decisions.</p><button class="feature-link" data-go="library">Explore trail facts ↗</button></article></div>
+        </section>
+
+        <section id="inbox-view" class="view"><div class="workspace-grid"><article class="panel conversation-list"><div class="panel-head"><div><div class="eyebrow">INBOX</div><h2>Conversations</h2></div><span id="inbox-count" class="count-pill">0</span></div><div class="filters"><input id="search" type="search" placeholder="Search name or number" aria-label="Search conversations"><select id="grade-filter" aria-label="Filter lead grade"><option value="all">All leads</option><option value="hot">Hot</option><option value="warm">Warm</option><option value="cold">Cold</option></select></div><div id="conversation-items"></div></article><article class="panel detail-panel" id="detail-panel"><div class="empty-detail"><span>◇</span><h2>Select a conversation</h2><p>Review the full chat, qualification, booking request, and team assignment.</p></div></article></div><article class="panel simulator" id="simulator"><div class="panel-head"><div><div class="eyebrow">LOCAL SIMULATOR</div><h2>Try an enquiry</h2></div><span class="demo-tag">DEMO ONLY</span></div><form id="sim-form"><input name="name" placeholder="Customer name" value="Jamie Walker" required><input name="phone" placeholder="Phone number" value="15550100999" required><input name="message" placeholder="Ask about a trail, booking, or discount" value="What gear do I need for Angels Landing?" required><button class="primary">Send enquiry</button></form></article></section>
+        <section id="bookings-view" class="view"><article class="panel"><div class="panel-head"><div><div class="eyebrow">BOOKING PIPELINE</div><h2>Requests and payments</h2></div><span class="panel-note">Staff confirms price before checkout</span></div><div class="table-wrap"><table><thead><tr><th>CUSTOMER</th><th>TRAIL</th><th>STATUS</th><th>AMOUNT</th><th>REQUESTED</th><th>ACTION</th></tr></thead><tbody id="booking-rows"></tbody></table></div></article></section>
+        <section id="library-view" class="view"><div class="library-intro"><div class="eyebrow">SOURCED EXAMPLE DATA</div><h2>Trail knowledge library</h2><p>These public trail facts let the demo answer real geography and preparation questions. Replace them with the company's approved website and PDF content before launch.</p></div><div class="library-grid" id="library-grid"></div></section>
+      </div>
+    </main>
+  </div>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script src="/app.js"></script>
+</body>
+</html>

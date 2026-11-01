@@ -1,0 +1,6 @@
+{
+  "note": "DEMO ONLY. Replace with the trekking company's approved qualification criteria.",
+  "hot": "Booking or payment intent, or a specific date plus group size.",
+  "warm": "A named trek, season, fitness, gear, or itinerary question.",
+  "cold": "General exploration without a trek, date, or booking signal."
+}
